@@ -1,19 +1,22 @@
-FROM node:alpine
+FROM --platform=$BUILDPLATFORM node:18.3.0 AS build
 
-RUN addgroup -S appgroup && \
-  adduser -S appuser -G appgroup && \
-  mkdir -p /home/appuser/app && \
-  chown appuser:appgroup /home/appuser/app
-USER appuser
+WORKDIR /app
 
-RUN yarn config set prefix ~/.yarn && \
-  yarn global add serve
+COPY package.json ./
+COPY yarn.lock ./
 
-WORKDIR /home/appuser/app
-COPY --chown=appuser:appgroup package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
-COPY --chown=appuser:appgroup . .
+RUN yarn install
+
+COPY . .
+
 RUN yarn build
 
+FROM node:18.3.0
+
+WORKDIR /app
+
+COPY --from=build /app/dist /app
+
 EXPOSE 3000
-CMD ["/home/appuser/.yarn/bin/serve", "-s", "dist", "-l", "3000"]
+
+ENTRYPOINT ["npx", "serve", "-s", "."]
