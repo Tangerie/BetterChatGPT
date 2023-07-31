@@ -13,6 +13,7 @@ jobs:
       registry_name: docker.tangerie.xyz
       ref: main
       force_build: true
+      path: ./
     secrets: inherit
     
   deploy:
